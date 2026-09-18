@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense &amp; Budget Visualizer</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo">💰</span>
+      <h1 class="app-title">Budget Visualizer</h1>
+    </div>
+    <button id="themeToggle" class="btn-icon" title="Toggle Dark / Light mode" aria-label="Toggle theme">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </header>
+
+  <!-- ========== MAIN LAYOUT ========== -->
+  <main class="app-main">
+
+    <!-- ---- LEFT PANEL ---- -->
+    <aside class="panel panel-left">
+
+      <!-- Balance Card -->
+      <div class="balance-card">
+        <p class="balance-label">Total Balance</p>
+        <p class="balance-amount" id="totalBalance">$0.00</p>
+        <div class="balance-stats">
+          <div class="stat income">
+            <span class="stat-icon">↑</span>
+            <div>
+              <p class="stat-label">Income</p>
+              <p class="stat-value" id="totalIncome">$0.00</p>
+            </div>
+          </div>
+          <div class="stat expense">
+            <span class="stat-icon">↓</span>
+            <div>
+              <p class="stat-label">Expenses</p>
+              <p class="stat-value" id="totalExpense">$0.00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Transaction Form -->
+      <div class="card">
+        <h2 class="card-title">Add Transaction</h2>
+        <form id="transactionForm" novalidate>
+          <div class="form-group">
+            <label for="itemName">Item Name</label>
+            <input type="text" id="itemName" placeholder="e.g. Lunch, Salary…" autocomplete="off" />
+            <span class="error-msg" id="err-name"></span>
+          </div>
+          <div class="form-group">
+            <label for="amount">Amount</label>
+            <div class="amount-wrapper">
+              <select id="amountType" aria-label="Income or Expense">
+                <option value="expense">− Expense</option>
+                <option value="income">+ Income</option>
+              </select>
+              <input type="number" id="amount" placeholder="0" min="1" step="1" />
+            </div>
+            <span class="error-msg" id="err-amount"></span>
+          </div>
+          <div class="form-group">
+            <label for="category">Category</label>
+            <div class="category-row">
+              <select id="category">
+                <option value="">— Select —</option>
+                <option value="Food">🍔 Food</option>
+                <option value="Transport">🚗 Transport</option>
+                <option value="Fun">🎮 Fun</option>
+              </select>
+              <button type="button" class="btn-outline" id="openCatModal" title="Add custom category">＋</button>
+            </div>
+            <span class="error-msg" id="err-category"></span>
+          </div>
+          <button type="submit" class="btn-primary">Add Transaction</button>
+        </form>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="card chart-card">
+        <h2 class="card-title">Spending by Category</h2>
+        <div class="chart-container">
+          <canvas id="pieChart" aria-label="Spending distribution pie chart" role="img"></canvas>
+          <p class="chart-empty" id="chartEmpty">No expense data yet.</p>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ---- RIGHT PANEL ---- -->
+    <section class="panel panel-right">
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <h2 class="card-title" style="margin:0">Transactions</h2>
+        <div class="controls-right">
+          <label for="sortSelect" class="sr-only">Sort by</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="amount-asc">Amount ↑</option>
+            <option value="amount-desc">Amount ↓</option>
+            <option value="category">Category A–Z</option>
+          </select>
+          <button id="clearAll" class="btn-danger" title="Delete all transactions">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Transaction List -->
+      <ul class="transaction-list" id="transactionList" aria-live="polite" aria-label="Transaction list">
+        <!-- items injected by JS -->
+      </ul>
+
+      <p class="list-empty" id="listEmpty">No transactions yet. Add one to get started!</p>
+
+    </section>
+
+  </main>
+
+  <!-- ========== CUSTOM CATEGORY MODAL ========== -->
+  <div class="modal-overlay" id="catModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal">
+      <h3 id="modalTitle">Add Custom Category</h3>
+      <div class="form-group">
+        <label for="catEmoji">Emoji (optional)</label>
+        <input type="text" id="catEmoji" placeholder="e.g. 🏠" maxlength="4" />
+      </div>
+      <div class="form-group">
+        <label for="catName">Category Name</label>
+        <input type="text" id="catName" placeholder="e.g. Housing" autocomplete="off" />
+        <span class="error-msg" id="err-catName"></span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="saveCat">Save Category</button>
+        <button class="btn-outline" id="closeCatModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CONFIRM DELETE MODAL ========== -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+    <div class="modal modal-sm">
+      <h3 id="confirmTitle">Delete Transaction?</h3>
+      <p class="confirm-text">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-danger" id="confirmDelete">Delete</button>
+        <button class="btn-outline" id="cancelDelete">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
